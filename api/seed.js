@@ -1,4 +1,4 @@
-// api/seed.ts
+// server/seed.ts
 var INITIAL_COMPANY = {
   companyName: "NAZ EXPORT",
   tagline: "We are committed to supplying premium Iranian products with reliable quality, competitive prices, and professional export services. We look forward to building long-term business partnerships with customers worldwide.",

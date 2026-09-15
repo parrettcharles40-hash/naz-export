@@ -1,15 +1,22 @@
-// api/index.js
+// server/index.ts
 import express from "express";
 import cors from "cors";
+
+// server/apiRouter.ts
 import { Router } from "express";
 import path2 from "path";
 import fs2 from "fs";
 import multer from "multer";
 import jwt from "jsonwebtoken";
+
+// server/db.ts
 import fs from "fs";
 import path from "path";
+
+// server/mongodb.ts
 import { MongoClient } from "mongodb";
-import { v2 as cloudinary } from "cloudinary";
+
+// server/seed.ts
 var INITIAL_COMPANY = {
   companyName: "NAZ EXPORT",
   tagline: "We are committed to supplying premium Iranian products with reliable quality, competitive prices, and professional export services. We look forward to building long-term business partnerships with customers worldwide.",
@@ -177,6 +184,8 @@ var INITIAL_PRODUCTS = [
     featured: true
   }
 ];
+
+// server/mongodb.ts
 var cachedClient = null;
 var cachedDb = null;
 var isSeeding = false;
@@ -223,6 +232,8 @@ async function seedMongoIfEmpty(db2) {
     console.error("Error during MongoDB seed check:", err);
   }
 }
+
+// server/db.ts
 var DATA_DIR = path.join(process.cwd(), "data");
 var DB_FILE = path.join(DATA_DIR, "db.json");
 var Database = class {
@@ -458,6 +469,9 @@ var Database = class {
   }
 };
 var db = new Database();
+
+// server/cloudinary.ts
+import { v2 as cloudinary } from "cloudinary";
 function isCloudinaryConfigured() {
   return Boolean(
     process.env.CLOUDINARY_URL || process.env.CLOUDINARY_CLOUD_NAME && process.env.CLOUDINARY_API_KEY && process.env.CLOUDINARY_API_SECRET
@@ -511,6 +525,8 @@ async function uploadBufferToCloudinary(buffer, fileName) {
     stream.end(buffer);
   });
 }
+
+// server/apiRouter.ts
 var apiRouter = Router();
 var UPLOADS_DIR = path2.join(process.cwd(), "public", "uploads");
 try {
@@ -753,6 +769,8 @@ apiRouter.delete("/inquiries/:id", authenticateToken, async (req, res) => {
     res.status(500).json({ error: err.message || "Failed to delete inquiry" });
   }
 });
+
+// server/index.ts
 var app = express();
 app.use(cors());
 app.use(express.json());
@@ -762,11 +780,8 @@ app.use("/", apiRouter);
 function handler(req, res) {
   return app(req, res);
 }
-
-// api/[...path].ts
-function handler2(req, res) {
-  return handler(req, res);
-}
 export {
-  handler2 as default
+  apiRouter,
+  app,
+  handler as default
 };

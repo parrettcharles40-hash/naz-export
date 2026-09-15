@@ -1,14 +1,18 @@
-// api/apiRouter.ts
+// server/apiRouter.ts
 import { Router } from "express";
 import path2 from "path";
 import fs2 from "fs";
 import multer from "multer";
 import jwt from "jsonwebtoken";
 
-// api/db.js
+// server/db.ts
 import fs from "fs";
 import path from "path";
+
+// server/mongodb.ts
 import { MongoClient } from "mongodb";
+
+// server/seed.ts
 var INITIAL_COMPANY = {
   companyName: "NAZ EXPORT",
   tagline: "We are committed to supplying premium Iranian products with reliable quality, competitive prices, and professional export services. We look forward to building long-term business partnerships with customers worldwide.",
@@ -176,6 +180,8 @@ var INITIAL_PRODUCTS = [
     featured: true
   }
 ];
+
+// server/mongodb.ts
 var cachedClient = null;
 var cachedDb = null;
 var isSeeding = false;
@@ -222,6 +228,8 @@ async function seedMongoIfEmpty(db2) {
     console.error("Error during MongoDB seed check:", err);
   }
 }
+
+// server/db.ts
 var DATA_DIR = path.join(process.cwd(), "data");
 var DB_FILE = path.join(DATA_DIR, "db.json");
 var Database = class {
@@ -458,7 +466,7 @@ var Database = class {
 };
 var db = new Database();
 
-// api/cloudinary.js
+// server/cloudinary.ts
 import { v2 as cloudinary } from "cloudinary";
 function isCloudinaryConfigured() {
   return Boolean(
@@ -514,7 +522,7 @@ async function uploadBufferToCloudinary(buffer, fileName) {
   });
 }
 
-// api/apiRouter.ts
+// server/apiRouter.ts
 var apiRouter = Router();
 var UPLOADS_DIR = path2.join(process.cwd(), "public", "uploads");
 try {

@@ -1,7 +1,7 @@
-// api/mongodb.ts
+// server/mongodb.ts
 import { MongoClient } from "mongodb";
 
-// api/seed.js
+// server/seed.ts
 var INITIAL_COMPANY = {
   companyName: "NAZ EXPORT",
   tagline: "We are committed to supplying premium Iranian products with reliable quality, competitive prices, and professional export services. We look forward to building long-term business partnerships with customers worldwide.",
@@ -170,7 +170,7 @@ var INITIAL_PRODUCTS = [
   }
 ];
 
-// api/mongodb.ts
+// server/mongodb.ts
 var cachedClient = null;
 var cachedDb = null;
 var isSeeding = false;

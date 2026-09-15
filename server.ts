@@ -2,7 +2,7 @@ import express from 'express';
 import path from 'path';
 import cors from 'cors';
 import { createServer as createViteServer } from 'vite';
-import { apiRouter } from './api/apiRouter';
+import { apiRouter } from './server/apiRouter';
 
 const app = express();
 const PORT = 3000;
