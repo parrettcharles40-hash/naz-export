@@ -1,5 +1,5 @@
 import { MongoClient, Db } from 'mongodb';
-import { INITIAL_PRODUCTS, INITIAL_COMPANY } from './seed';
+import { INITIAL_PRODUCTS, INITIAL_COMPANY } from './seed.js';
 
 let cachedClient: MongoClient | null = null;
 let cachedDb: Db | null = null;

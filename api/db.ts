@@ -1,8 +1,8 @@
 import fs from 'fs';
 import path from 'path';
-import { getMongoDb } from './mongodb';
-import { Product, CompanyInfo, Inquiry } from './types';
-import { INITIAL_COMPANY, INITIAL_PRODUCTS } from './seed';
+import { getMongoDb } from './mongodb.js';
+import { Product, CompanyInfo, Inquiry } from './types.js';
+import { INITIAL_COMPANY, INITIAL_PRODUCTS } from './seed.js';
 
 export type { Product, CompanyInfo, Inquiry };
 

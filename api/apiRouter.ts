@@ -3,8 +3,8 @@ import path from 'path';
 import fs from 'fs';
 import multer from 'multer';
 import jwt from 'jsonwebtoken';
-import { db } from './db';
-import { isCloudinaryConfigured, uploadBufferToCloudinary } from './cloudinary';
+import { db } from './db.js';
+import { isCloudinaryConfigured, uploadBufferToCloudinary } from './cloudinary.js';
 
 export const apiRouter = Router();
 

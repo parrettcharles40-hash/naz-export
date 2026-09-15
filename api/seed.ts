@@ -1,4 +1,4 @@
-import { CompanyInfo, Product } from './types';
+import { CompanyInfo, Product } from './types.js';
 
 export const INITIAL_COMPANY: CompanyInfo = {
   companyName: 'NAZ EXPORT',
