@@ -1,6 +1,6 @@
 import express from 'express';
 import cors from 'cors';
-import { apiRouter } from '../server/apiRouter.ts';
+import { apiRouter } from './apiRouter';
 
 const app = express();
 
@@ -12,4 +12,8 @@ app.use(express.urlencoded({ extended: true }));
 app.use('/api', apiRouter);
 app.use('/', apiRouter);
 
-export default app;
+export default function handler(req: any, res: any) {
+  return app(req, res);
+}
+
+export { app, apiRouter };
