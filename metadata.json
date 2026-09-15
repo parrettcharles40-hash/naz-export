@@ -1,0 +1,6 @@
+{
+  "name": "NAZ EXPORT",
+  "description": "Premium Iranian export company catalog and showcase for Saffron, Herbal Products, Pistachios, and Persian Tea with wholesale MOQ inquiry and admin management.",
+  "requestFramePermissions": [],
+  "majorCapabilities": ["MAJOR_CAPABILITY_SERVER_SIDE_GEMINI_API"]
+}

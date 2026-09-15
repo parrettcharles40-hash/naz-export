@@ -1,0 +1,70 @@
+@import "tailwindcss";
+
+@layer utilities {
+  .perspective-1000 {
+    perspective: 1000px;
+  }
+  .transform-style-3d {
+    transform-style: preserve-3d;
+  }
+  .backface-hidden {
+    backface-visibility: hidden;
+    -webkit-backface-visibility: hidden;
+  }
+  .rotate-y-180 {
+    transform: rotateY(180deg);
+  }
+}
+
+/* Auto color-shifting keyframe for headline/hero text */
+@keyframes colorShift {
+  0% {
+    color: #1F3B2C; /* Dark forest green */
+  }
+  33% {
+    color: #4A2810; /* Deep Persian saffron brown */
+  }
+  66% {
+    color: #1E293B; /* Deep charcoal navy */
+  }
+  100% {
+    color: #1F3B2C;
+  }
+}
+
+.animate-color-shift {
+  animation: colorShift 7s ease-in-out infinite;
+}
+
+/* Header continuous scrolling marquee (left-to-right as specified) */
+@keyframes marqueeLeftToRight {
+  0% {
+    transform: translateX(-50%);
+  }
+  100% {
+    transform: translateX(0%);
+  }
+}
+
+.animate-marquee-ltr {
+  display: flex;
+  width: max-content;
+  animation: marqueeLeftToRight 28s linear infinite;
+}
+
+.animate-marquee-ltr:hover {
+  animation-play-state: paused;
+}
+
+/* Custom fonts */
+.font-cinzel {
+  font-family: 'Cinzel', serif;
+}
+
+.font-serif-display {
+  font-family: 'Playfair Display', Georgia, serif;
+}
+
+.font-sans-body {
+  font-family: 'Plus Jakarta Sans', system-ui, sans-serif;
+}
