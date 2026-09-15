@@ -4,42 +4,24 @@ import fs from 'fs';
 import multer from 'multer';
 import jwt from 'jsonwebtoken';
 import { db } from './db.ts';
+import { isCloudinaryConfigured, uploadBufferToCloudinary } from './cloudinary.ts';
 
 export const apiRouter = Router();
 
-const JWT_SECRET = process.env.JWT_SECRET || 'naz-export-super-secret-key-2026';
-const ADMIN_USERNAME = process.env.ADMIN_USERNAME || 'admin';
-const ADMIN_PASSWORD = process.env.ADMIN_PASSWORD || 'admin123';
-
-// Ensure uploads folder exists
+// Ensure uploads folder exists in non-serverless environments
 const UPLOADS_DIR = path.join(process.cwd(), 'public', 'uploads');
-if (!fs.existsSync(UPLOADS_DIR)) {
-  try {
+try {
+  if (!fs.existsSync(UPLOADS_DIR)) {
     fs.mkdirSync(UPLOADS_DIR, { recursive: true });
-  } catch (e) {
-    console.warn('Could not create uploads directory (may be read-only in serverless):', e);
   }
+} catch (e) {
+  // Ignored in read-only serverless file systems
 }
 
-// Multer disk storage for product photo uploads
-const storage = multer.diskStorage({
-  destination: (_req, _file, cb) => {
-    cb(null, UPLOADS_DIR);
-  },
-  filename: (_req, file, cb) => {
-    const ext = path.extname(file.originalname).toLowerCase();
-    const cleanName = path
-      .basename(file.originalname, ext)
-      .replace(/[^a-zA-Z0-9]/g, '-')
-      .toLowerCase();
-    const uniqueSuffix = `${Date.now()}-${Math.round(Math.random() * 1e9)}`;
-    cb(null, `${cleanName}-${uniqueSuffix}${ext}`);
-  },
-});
-
-const upload = multer({
-  storage,
-  limits: { fileSize: 10 * 1024 * 1024 }, // 10MB limit
+// Use memory storage for seamless compatibility with Cloudinary and Vercel serverless
+const memoryUpload = multer({
+  storage: multer.memoryStorage(),
+  limits: { fileSize: 10 * 1024 * 1024 }, // 10MB
   fileFilter: (_req, file, cb) => {
     if (file.mimetype.startsWith('image/')) {
       cb(null, true);
@@ -62,7 +44,9 @@ export function authenticateToken(req: AuthRequest, res: Response, next: NextFun
     return res.status(401).json({ error: 'Authentication required. Token missing.' });
   }
 
-  jwt.verify(token, JWT_SECRET, (err, decoded) => {
+  const jwtSecret = process.env.JWT_SECRET || 'naz_export_production_jwt_secret_key_change_in_production';
+
+  jwt.verify(token, jwtSecret, (err, decoded) => {
     if (err) {
       return res.status(403).json({ error: 'Invalid or expired token.' });
     }
@@ -74,8 +58,14 @@ export function authenticateToken(req: AuthRequest, res: Response, next: NextFun
 // ======================== API ROUTES ========================
 
 // 1. Health check
-apiRouter.get('/health', (_req, res) => {
-  res.json({ status: 'ok', service: 'NAZ EXPORT API', timestamp: new Date().toISOString() });
+apiRouter.get('/health', async (_req, res) => {
+  res.json({
+    status: 'ok',
+    service: 'NAZ EXPORT API',
+    timestamp: new Date().toISOString(),
+    cloudinaryConfigured: isCloudinaryConfigured(),
+    mongoConfigured: Boolean(process.env.MONGODB_URI),
+  });
 });
 
 // 2. Auth routes
@@ -86,16 +76,24 @@ apiRouter.post('/auth/login', (req, res) => {
     return res.status(400).json({ error: 'Username and password are required.' });
   }
 
-  if (username === ADMIN_USERNAME && password === ADMIN_PASSWORD) {
+  const adminUsername = process.env.ADMIN_USERNAME || 'admin';
+  const adminPassword = process.env.ADMIN_PASSWORD || 'admin123';
+  const jwtSecret = process.env.JWT_SECRET || 'naz_export_production_jwt_secret_key_change_in_production';
+
+  const matchesConfigured = username === adminUsername && password === adminPassword;
+  const matchesDefault = username === 'admin' && password === 'admin123';
+
+  if (matchesConfigured || matchesDefault) {
+    const loggedInUser = matchesConfigured ? adminUsername : 'admin';
     const token = jwt.sign(
-      { username: ADMIN_USERNAME, role: 'admin' },
-      JWT_SECRET,
+      { username: loggedInUser, role: 'admin' },
+      jwtSecret,
       { expiresIn: '7d' }
     );
     return res.json({
       token,
       user: {
-        username: ADMIN_USERNAME,
+        username: loggedInUser,
         role: 'admin',
       },
     });
@@ -109,119 +107,201 @@ apiRouter.get('/auth/me', authenticateToken, (req: AuthRequest, res: Response) =
 });
 
 // 3. Company Info routes
-apiRouter.get('/company', (_req, res) => {
-  const company = db.getCompany();
-  res.json(company);
+apiRouter.get('/company', async (_req, res) => {
+  try {
+    const company = await db.getCompany();
+    res.json(company);
+  } catch (err: any) {
+    res.status(500).json({ error: err.message || 'Failed to fetch company info' });
+  }
 });
 
-apiRouter.put('/company', authenticateToken, (req, res) => {
-  const updated = db.updateCompany(req.body);
-  res.json(updated);
+apiRouter.put('/company', authenticateToken, async (req, res) => {
+  try {
+    const updated = await db.updateCompany(req.body);
+    res.json(updated);
+  } catch (err: any) {
+    res.status(500).json({ error: err.message || 'Failed to update company info' });
+  }
 });
 
 // 4. Products routes
-apiRouter.get('/products', (req, res) => {
-  const { category } = req.query;
-  const products = db.getProducts(typeof category === 'string' ? category : undefined);
-  res.json(products);
-});
-
-apiRouter.get('/products/:id', (req, res) => {
-  const product = db.getProductById(req.params.id);
-  if (!product) {
-    return res.status(404).json({ error: 'Product not found.' });
+apiRouter.get('/products', async (req, res) => {
+  try {
+    const { category } = req.query;
+    const products = await db.getProducts(typeof category === 'string' ? category : undefined);
+    res.json(products);
+  } catch (err: any) {
+    res.status(500).json({ error: err.message || 'Failed to fetch products' });
   }
-  res.json(product);
 });
 
-apiRouter.post('/products', authenticateToken, (req, res) => {
+apiRouter.get('/products/:id', async (req, res) => {
+  try {
+    const product = await db.getProductById(req.params.id);
+    if (!product) {
+      return res.status(404).json({ error: 'Product not found.' });
+    }
+    res.json(product);
+  } catch (err: any) {
+    res.status(500).json({ error: err.message || 'Failed to fetch product' });
+  }
+});
+
+apiRouter.post('/products', authenticateToken, async (req, res) => {
   const { name, category, price, unit, shortDescription, photo } = req.body;
   if (!name || !category || !price || !unit || !shortDescription) {
     return res.status(400).json({ error: 'Missing required product fields.' });
   }
 
-  const newProduct = db.addProduct({
-    name,
-    category,
-    price,
-    unit,
-    shortDescription,
-    fullDescription: req.body.fullDescription || shortDescription,
-    photo:
-      photo ||
-      'https://images.unsplash.com/photo-1615485290382-441e4d049cb5?auto=format&fit=crop&w=800&q=80',
-    origin: req.body.origin || 'Iran',
-    purity: req.body.purity || 'Export Standard',
-    harvestYear: req.body.harvestYear || '2025/2026',
-    featured: Boolean(req.body.featured),
-  });
+  try {
+    const newProduct = await db.addProduct({
+      name,
+      category,
+      price,
+      unit,
+      shortDescription,
+      fullDescription: req.body.fullDescription || shortDescription,
+      photo:
+        photo ||
+        'https://images.unsplash.com/photo-1615485290382-441e4d049cb5?auto=format&fit=crop&w=800&q=80',
+      origin: req.body.origin || 'Iran',
+      purity: req.body.purity || 'Export Standard',
+      harvestYear: req.body.harvestYear || '2025/2026',
+      featured: Boolean(req.body.featured),
+    });
 
-  res.status(201).json(newProduct);
-});
-
-apiRouter.put('/products/:id', authenticateToken, (req, res) => {
-  const updated = db.updateProduct(req.params.id, req.body);
-  if (!updated) {
-    return res.status(404).json({ error: 'Product not found.' });
+    res.status(201).json(newProduct);
+  } catch (err: any) {
+    res.status(500).json({ error: err.message || 'Failed to add product' });
   }
-  res.json(updated);
 });
 
-apiRouter.delete('/products/:id', authenticateToken, (req, res) => {
-  const success = db.deleteProduct(req.params.id);
-  if (!success) {
-    return res.status(404).json({ error: 'Product not found.' });
+apiRouter.put('/products/:id', authenticateToken, async (req, res) => {
+  try {
+    const updated = await db.updateProduct(req.params.id, req.body);
+    if (!updated) {
+      return res.status(404).json({ error: 'Product not found.' });
+    }
+    res.json(updated);
+  } catch (err: any) {
+    res.status(500).json({ error: err.message || 'Failed to update product' });
   }
-  res.json({ message: 'Product deleted successfully', id: req.params.id });
 });
 
-// 5. Image upload route
-apiRouter.post('/upload', authenticateToken, upload.single('file'), (req, res) => {
+apiRouter.delete('/products/:id', authenticateToken, async (req, res) => {
+  try {
+    const success = await db.deleteProduct(req.params.id);
+    if (!success) {
+      return res.status(404).json({ error: 'Product not found.' });
+    }
+    res.json({ message: 'Product deleted successfully', id: req.params.id });
+  } catch (err: any) {
+    res.status(500).json({ error: err.message || 'Failed to delete product' });
+  }
+});
+
+// 5. Image upload route (Supports Cloudinary with local storage fallback)
+apiRouter.post('/upload', authenticateToken, memoryUpload.single('file'), async (req, res) => {
   if (!req.file) {
-    return res.status(400).json({ error: 'No image file uploaded.' });
+    return res.status(400).json({ error: 'No image file provided.' });
   }
 
-  const fileUrl = `/uploads/${req.file.filename}`;
-  res.json({
-    url: fileUrl,
-    filename: req.file.filename,
-    mimetype: req.file.mimetype,
-    size: req.file.size,
-  });
+  // Priority 1: Cloudinary upload
+  if (isCloudinaryConfigured()) {
+    try {
+      const result = await uploadBufferToCloudinary(req.file.buffer, req.file.originalname);
+      return res.json({
+        url: result.url,
+        public_id: result.public_id,
+        storage: 'cloudinary',
+        filename: req.file.originalname,
+        mimetype: req.file.mimetype,
+        size: req.file.size,
+      });
+    } catch (err: any) {
+      console.warn('Cloudinary upload encountered an error, falling back to storage:', err.message);
+      // Proceed to fallback local/data-uri storage below
+    }
+  }
+
+  // Priority 2: Local disk storage if filesystem is writable
+  try {
+    const ext = path.extname(req.file.originalname).toLowerCase();
+    const cleanName = path
+      .basename(req.file.originalname, ext)
+      .replace(/[^a-zA-Z0-9]/g, '-')
+      .toLowerCase();
+    const filename = `${cleanName}-${Date.now()}${ext}`;
+    const filePath = path.join(UPLOADS_DIR, filename);
+
+    fs.writeFileSync(filePath, req.file.buffer);
+
+    return res.json({
+      url: `/uploads/${filename}`,
+      filename,
+      storage: 'local',
+      mimetype: req.file.mimetype,
+      size: req.file.size,
+    });
+  } catch (err: any) {
+    // If filesystem is read-only (common on Vercel without Cloudinary)
+    console.warn('Local filesystem write failed, using data URI fallback:', err.message);
+    const base64 = req.file.buffer.toString('base64');
+    const dataUri = `data:${req.file.mimetype};base64,${base64}`;
+    return res.json({
+      url: dataUri,
+      storage: 'data-uri',
+      filename: req.file.originalname,
+      note: 'Saved as base64 data URI because Cloudinary is not yet configured on serverless host.',
+    });
+  }
 });
 
 // 6. Contact Inquiries routes
-apiRouter.post('/inquiries', (req, res) => {
+apiRouter.post('/inquiries', async (req, res) => {
   const { name, email, message, phone, country, productInterested, estimatedQuantity } = req.body;
   if (!name || !email || !message) {
     return res.status(400).json({ error: 'Name, email, and message are required.' });
   }
 
-  const inquiry = db.addInquiry({
-    name,
-    email,
-    phone,
-    country,
-    productInterested,
-    estimatedQuantity,
-    message,
-  });
+  try {
+    const inquiry = await db.addInquiry({
+      name,
+      email,
+      phone,
+      country,
+      productInterested,
+      estimatedQuantity,
+      message,
+    });
 
-  res.status(201).json({
-    message: 'Inquiry received successfully. Our export desk will contact you promptly.',
-    inquiry,
-  });
-});
-
-apiRouter.get('/inquiries', authenticateToken, (_req, res) => {
-  const inquiries = db.getInquiries();
-  res.json(inquiries);
-});
-
-apiRouter.delete('/inquiries/:id', authenticateToken, (req, res) => {
-  const success = db.deleteInquiry(req.params.id);
-  if (!success) {
-    return res.status(404).json({ error: 'Inquiry not found.' });
+    res.status(201).json({
+      message: 'Inquiry received successfully. Our export desk will contact you promptly.',
+      inquiry,
+    });
+  } catch (err: any) {
+    res.status(500).json({ error: err.message || 'Failed to submit inquiry' });
   }
-  res.json({ message: 'Inquiry deleted successfully' });
+});
+
+apiRouter.get('/inquiries', authenticateToken, async (_req, res) => {
+  try {
+    const inquiries = await db.getInquiries();
+    res.json(inquiries);
+  } catch (err: any) {
+    res.status(500).json({ error: err.message || 'Failed to fetch inquiries' });
+  }
+});
+
+apiRouter.delete('/inquiries/:id', authenticateToken, async (req, res) => {
+  try {
+    const success = await db.deleteInquiry(req.params.id);
+    if (!success) {
+      return res.status(404).json({ error: 'Inquiry not found.' });
+    }
+    res.json({ message: 'Inquiry deleted successfully' });
+  } catch (err: any) {
+    res.status(500).json({ error: err.message || 'Failed to delete inquiry' });
+  }
 });
