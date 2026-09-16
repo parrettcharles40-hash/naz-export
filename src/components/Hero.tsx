@@ -1,17 +1,50 @@
 import React from 'react';
-import { CompanyInfo } from '../types.ts';
+import { CompanyInfo, Product } from '../types.ts';
 import { ArrowRight, ShieldCheck, Globe, PackageCheck, Award, MessageSquare } from 'lucide-react';
 import { motion } from 'motion/react';
 
 interface HeroProps {
   company: CompanyInfo;
+  products?: Product[];
+  featuredProduct?: Product;
   onExploreClick: () => void;
+  onOpenProductModal?: (product: Product) => void;
 }
 
-export const Hero: React.FC<HeroProps> = ({ company, onExploreClick }) => {
+export const Hero: React.FC<HeroProps> = ({
+  company,
+  products,
+  featuredProduct,
+  onExploreClick,
+  onOpenProductModal,
+}) => {
   const whatsappUrl = `https://wa.me/${company.whatsapp.replace(/[^0-9]/g, '')}?text=${encodeURIComponent(
     'Hi NAZ EXPORT, I would like to inquire about wholesale bulk order (MOQ 20kg).'
   )}`;
+
+  // Dynamically resolve featured product:
+  // 1. Explicitly passed featuredProduct prop
+  // 2. Matching company.heroProductId if set
+  // 3. Product with id 'saffron-super-negin' or name containing 'Super Negin'
+  // 4. Product with featured: true
+  // 5. First product in list
+  const activeProduct =
+    featuredProduct ||
+    (company.heroProductId ? products?.find((p) => p.id === company.heroProductId) : undefined) ||
+    products?.find((p) => p.id === 'saffron-super-negin') ||
+    products?.find((p) => p.name.toLowerCase().includes('super negin')) ||
+    products?.find((p) => p.featured) ||
+    products?.[0];
+
+  const productImage =
+    activeProduct?.photo ||
+    'https://images.unsplash.com/photo-1596040033229-a9821ebd058d?auto=format&fit=crop&w=900&q=85';
+  const productName = activeProduct?.name || 'Super Negin Saffron';
+  const productPurity = activeProduct?.purity || 'Grade 1 ISO 3632 Cat I';
+  const productPrice = activeProduct?.price
+    ? `${activeProduct.price}${activeProduct.unit && !activeProduct.price.includes('/') ? ` / ${activeProduct.unit}` : ''}`
+    : '$1.80/gram';
+  const productOrigin = activeProduct?.origin || 'Khorasan Razavi, Iran';
 
   return (
     <section
@@ -118,34 +151,48 @@ export const Hero: React.FC<HeroProps> = ({ company, onExploreClick }) => {
             transition={{ duration: 0.7, delay: 0.2 }}
             className="lg:col-span-5 relative perspective-1000"
           >
-            <div className="relative rounded-2xl bg-white/70 backdrop-blur-md p-4 sm:p-5 border border-[#CDE5D3] shadow-xl hover:shadow-2xl transition-all duration-500 transform lg:rotate-1 hover:rotate-0">
+            <div
+              onClick={() => {
+                if (activeProduct && onOpenProductModal) {
+                  onOpenProductModal(activeProduct);
+                }
+              }}
+              className={`relative rounded-2xl bg-white/70 backdrop-blur-md p-4 sm:p-5 border border-[#CDE5D3] shadow-xl hover:shadow-2xl transition-all duration-500 transform lg:rotate-1 hover:rotate-0 ${
+                activeProduct && onOpenProductModal ? 'cursor-pointer group' : ''
+              }`}
+              title={activeProduct ? `Click to inspect ${productName} specifications` : undefined}
+            >
               {/* Featured Showcase Item */}
               <div className="relative h-64 sm:h-72 w-full rounded-xl overflow-hidden bg-slate-100 shadow-inner">
                 <img
-                  src="https://images.unsplash.com/photo-1615485290382-441e4d049cb5?auto=format&fit=crop&w=900&q=85"
-                  alt="Persian Super Negin Saffron Threads"
+                  src={productImage}
+                  alt={productName}
                   className="w-full h-full object-cover object-center transform hover:scale-105 transition-transform duration-700"
                   referrerPolicy="no-referrer"
+                  onError={(e) => {
+                    (e.target as HTMLImageElement).src =
+                      'https://images.unsplash.com/photo-1596040033229-a9821ebd058d?auto=format&fit=crop&w=900&q=85';
+                  }}
                 />
-                <div className="absolute inset-0 bg-gradient-to-t from-black/75 via-black/20 to-transparent" />
+                <div className="absolute inset-0 bg-gradient-to-t from-black/80 via-black/25 to-transparent" />
                 
                 {/* Badge on visual */}
                 <div className="absolute top-3 left-3 bg-[#1F3B2C]/90 backdrop-blur-sm text-emerald-200 text-xs font-semibold px-3 py-1 rounded-full border border-emerald-400/30">
                   Top Export Selection
                 </div>
                 <div className="absolute top-3 right-3 bg-amber-500/90 text-white text-xs font-bold px-2.5 py-1 rounded-full shadow-md">
-                  ISO 3632 Cat I
+                  {productPurity}
                 </div>
 
                 <div className="absolute bottom-3 left-3 right-3 text-white">
                   <div className="text-xs font-medium text-amber-200 uppercase tracking-widest">
-                    Grade A Khorasan Red Gold
+                    {productOrigin}
                   </div>
                   <div className="text-lg sm:text-xl font-bold font-cinzel">
-                    Super Negin Saffron
+                    {productName}
                   </div>
                   <div className="flex items-center justify-between mt-1 text-xs">
-                    <span className="text-emerald-100 font-semibold">$1.80 / gram</span>
+                    <span className="text-emerald-100 font-semibold">{productPrice}</span>
                     <span className="bg-white/20 backdrop-blur-sm px-2 py-0.5 rounded text-[11px]">
                       MOQ: {company.moq}
                     </span>

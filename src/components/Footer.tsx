@@ -1,13 +1,13 @@
 import React from 'react';
 import { CompanyInfo } from '../types.ts';
-import { MessageSquare, Mail, Linkedin, ArrowUp, Shield } from 'lucide-react';
+import { MessageSquare, Mail, Linkedin, ArrowUp } from 'lucide-react';
 
 interface FooterProps {
   company: CompanyInfo;
-  onOpenAdmin: () => void;
+  onOpenAdmin?: () => void;
 }
 
-export const Footer: React.FC<FooterProps> = ({ company, onOpenAdmin }) => {
+export const Footer: React.FC<FooterProps> = ({ company }) => {
   const scrollToTop = () => {
     window.scrollTo({ top: 0, behavior: 'smooth' });
   };
@@ -61,16 +61,6 @@ export const Footer: React.FC<FooterProps> = ({ company, onOpenAdmin }) => {
               </li>
               <li>
                 <a href="#contact" className="hover:text-emerald-300 transition-colors">Direct Contact Desk</a>
-              </li>
-              <li>
-                <button
-                  type="button"
-                  onClick={onOpenAdmin}
-                  className="hover:text-emerald-300 transition-colors flex items-center space-x-1 cursor-pointer text-emerald-400"
-                >
-                  <Shield className="w-3 h-3" />
-                  <span>Admin Management</span>
-                </button>
               </li>
             </ul>
           </div>

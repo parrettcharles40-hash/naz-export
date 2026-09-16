@@ -26,6 +26,7 @@ export interface CompanyInfo {
   establishedYear?: string;
   headquarters?: string;
   exportDestinations?: string;
+  heroProductId?: string;
   updatedAt?: string;
 }
 

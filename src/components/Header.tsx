@@ -1,14 +1,14 @@
 import React, { useState } from 'react';
 import { CompanyInfo } from '../types.ts';
-import { MessageSquare, Mail, Linkedin, Menu, X, Shield, ExternalLink, Globe } from 'lucide-react';
+import { MessageSquare, Mail, Linkedin, Menu, X, ExternalLink, Globe } from 'lucide-react';
 
 interface HeaderProps {
   company: CompanyInfo;
-  onOpenAdmin: () => void;
-  isAdminLoggedIn: boolean;
+  onOpenAdmin?: () => void;
+  isAdminLoggedIn?: boolean;
 }
 
-export const Header: React.FC<HeaderProps> = ({ company, onOpenAdmin, isAdminLoggedIn }) => {
+export const Header: React.FC<HeaderProps> = ({ company }) => {
   const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
 
   const whatsappUrl = `https://wa.me/${company.whatsapp.replace(/[^0-9]/g, '')}?text=${encodeURIComponent(
@@ -118,32 +118,10 @@ export const Header: React.FC<HeaderProps> = ({ company, onOpenAdmin, isAdminLog
               <Linkedin className="w-4 h-4 text-[#0077B5]" />
               <span>LinkedIn</span>
             </a>
-
-            {/* Admin Panel Button */}
-            <button
-              onClick={onOpenAdmin}
-              className={`inline-flex items-center space-x-1.5 px-3 py-2 rounded-lg text-xs font-semibold transition-all duration-200 border ${
-                isAdminLoggedIn
-                  ? 'bg-emerald-600 text-white border-emerald-700 shadow-xs'
-                  : 'bg-white hover:bg-[#EAF6EC] text-[#1F3B2C] border-[#BDD9C8]'
-              }`}
-              id="header-btn-admin"
-              title="Access NAZ EXPORT Admin Panel"
-            >
-              <Shield className="w-3.5 h-3.5" />
-              <span>{isAdminLoggedIn ? 'Admin Active' : 'Admin'}</span>
-            </button>
           </div>
 
           {/* Mobile Menu Button */}
           <div className="flex items-center space-x-2 md:hidden">
-            <button
-              onClick={onOpenAdmin}
-              className="p-2 rounded-lg text-[#1F3B2C] hover:bg-[#EAF6EC] border border-[#BDD9C8]"
-              title="Admin"
-            >
-              <Shield className="w-4 h-4" />
-            </button>
             <button
               onClick={() => setMobileMenuOpen(!mobileMenuOpen)}
               className="p-2.5 rounded-lg text-[#1F3B2C] hover:bg-[#EAF6EC] focus:outline-hidden"

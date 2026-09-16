@@ -71,7 +71,7 @@ export const ProductCard: React.FC<ProductCardProps> = ({
               onError={(e) => {
                 // Fallback in case of broken image URL
                 (e.target as HTMLImageElement).src =
-                  'https://images.unsplash.com/photo-1615485290382-441e4d049cb5?auto=format&fit=crop&w=800&q=80';
+                  'https://images.unsplash.com/photo-1596040033229-a9821ebd058d?auto=format&fit=crop&w=800&q=80';
               }}
             />
             <div className="absolute inset-0 bg-gradient-to-t from-black/50 via-transparent to-transparent opacity-60" />

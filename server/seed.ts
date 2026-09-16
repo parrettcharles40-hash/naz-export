@@ -10,6 +10,7 @@ export const INITIAL_COMPANY: CompanyInfo = {
   moq: '20 KG',
   headquarters: 'Tehran & Khorasan, Iran',
   exportDestinations: 'Europe, Middle East, Asia-Pacific, Americas',
+  heroProductId: 'saffron-super-negin',
 };
 
 export const INITIAL_PRODUCTS: Product[] = [
@@ -42,7 +43,7 @@ export const INITIAL_PRODUCTS: Product[] = [
     fullDescription:
       'Super Negin is the finest, most luxurious commercial grade of saffron globally. Selected by hand directly after harvest, only the thickest crimson filaments are dried straight without any breakage or yellow parts.',
     photo:
-      'https://images.unsplash.com/photo-1615485290382-441e4d049cb5?auto=format&fit=crop&w=800&q=80',
+      'https://images.unsplash.com/photo-1596040033229-a9821ebd058d?auto=format&fit=crop&w=800&q=80',
     origin: 'Khorasan Razavi, Iran',
     purity: 'Grade 1 ISO 3632 Category I',
     harvestYear: '2025/2026',

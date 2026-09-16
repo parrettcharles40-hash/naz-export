@@ -164,7 +164,7 @@ apiRouter.post('/products', authenticateToken, async (req, res) => {
       fullDescription: req.body.fullDescription || shortDescription,
       photo:
         photo ||
-        'https://images.unsplash.com/photo-1615485290382-441e4d049cb5?auto=format&fit=crop&w=800&q=80',
+        'https://images.unsplash.com/photo-1596040033229-a9821ebd058d?auto=format&fit=crop&w=800&q=80',
       origin: req.body.origin || 'Iran',
       purity: req.body.purity || 'Export Standard',
       harvestYear: req.body.harvestYear || '2025/2026',

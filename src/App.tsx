@@ -87,7 +87,11 @@ export default function App() {
     };
 
     window.addEventListener('popstate', handlePopState);
-    return () => window.removeEventListener('popstate', handlePopState);
+    window.addEventListener('hashchange', handlePopState);
+    return () => {
+      window.removeEventListener('popstate', handlePopState);
+      window.removeEventListener('hashchange', handlePopState);
+    };
   }, []);
 
   const handleExploreClick = () => {
@@ -100,16 +104,17 @@ export default function App() {
   return (
     <div className="min-h-screen flex flex-col bg-[#F3F8F3] text-[#1F3B2C] font-sans-body relative">
       {/* Header with Continuous Scrolling Marquee */}
-      <Header
-        company={company}
-        onOpenAdmin={openAdmin}
-        isAdminLoggedIn={isAdminLoggedIn}
-      />
+      <Header company={company} />
 
       {/* Main Content Areas */}
       <main className="flex-1">
-        {/* Hero with auto color-shifting text animation */}
-        <Hero company={company} onExploreClick={handleExploreClick} />
+        {/* Hero with dynamic featured product showcase and auto color-shifting text animation */}
+        <Hero
+          company={company}
+          products={products}
+          onExploreClick={handleExploreClick}
+          onOpenProductModal={(prod) => setSelectedProduct(prod)}
+        />
 
         {/* Products Section */}
         <ProductsSection
@@ -127,7 +132,7 @@ export default function App() {
       </main>
 
       {/* Footer */}
-      <Footer company={company} onOpenAdmin={openAdmin} />
+      <Footer company={company} />
 
       {/* Product Detail Modal */}
       <ProductModal
